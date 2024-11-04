@@ -1,0 +1,135 @@
+---
+title: "Mderangu_Goal"
+output:
+  word_document: default
+  html_document: default
+date: "2024-10-30"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Load required packages
+library(dplyr)
+# Load required packages
+library(lpSolveAPI)
+
+#Question_1
+
+#Define y1+ and y1-, respectively, as the amount over (if any) and the amount under (if any) the employment level goal. Define y2+ and y2- in the same way for the goal regarding earnings next year. Define x1, x2, and x3 as the production rates of Products 1, 2, and 3, respectively. With these definitions, use the goal programming technique to express y1+, y1- , y2+ and y2-  algebraically in terms of x1, x2, and x3. Also express P in terms of x1, x2, and x3.
+
+#Answer_1:Let's Define y1(+), y1(-), y2(+), y2(-)
+
+#Definitions: 
+
+# y1(+): The amount by which the employment level exceeds the goal of 50 employees.
+# y1(-): The amount by which the employment level falls short of the goal of 50 employees.
+# y2(+): The amount by which the earnings next year exceed the goal of $75 million.
+# y2(-): The amount by which the earnings next year fall short of the goal of $75 million.
+
+#Algebraic Expressions: Using the production rates of Products 1, 2, and 3, denoted as x1, x2, x3 respectively, we can express the constraints as follows:
+
+#1. Employment Level Constraint: 6x1 + 4x2 + 5x3 + y1(-) - y1(+) = 50
+
+#Rearranging gives: y1(+) = (6x1 + 4x2 + 5x3 - 50) and y1(-) = (50 - (6x1 + 4x2 + 5x3))
+
+#2. Earnings Next Year Constraint: 8x1 + 7x2+ 5x3 + y2(-) - y2(+) = 75
+
+#Rearranging gives: y2(+) = (8x1 + 7x2 + 5x3 - 75) and y2(-) = (75 - (8x1 + 7x2 + 5x3))
+
+#Expressing Total Profit P
+#Total profit can be expressed as: P = 20x1 + 15x2 + 25x3
+
+# Create a data frame for the product contributions, goals, and units
+data <- data.frame(
+  Factor = c("Total Profit", "Employment Level", "Earnings Next Year"),
+  Product_1 = c(20, 6, 8),
+  Product_2 = c(15, 4, 7),
+  Product_3 = c(25, 5, 5),
+  Goal = c("Maximize", "= 50", "≥ 75"),
+  Units = c("Millions of dollars", "Hundreds of employees", "Millions of dollars"),
+  stringsAsFactors = FALSE  # Avoid factors for character columns
+)
+
+# Print the data frame in the console
+print(data)
+
+# Define LP model with 2 constraints and 7 variables (x1, x2, x3, y1p, y1m, y2p, y2m)
+lp_mod <- make.lp(2, 7)
+
+# Set the objective function coefficients for Z = 20x1 + 15x2 + 25x3 - 6(y1p + y1m) - 3(y2m)
+set.objfn(lp_mod, c(20, 15, 25, -6, -6, 0, -3))
+
+# Set the LP problem to maximize
+lp.control(lp_mod, sense = 'max')
+
+# Define the constraint rows for employment and earnings
+# First constraint: 8x1 + 6x2 + 5x3 - (y1p - y1m) = 50
+set.row(lp_mod, 1, c(8, 6, 5, -1, 1, 0, 0), indices = c(1, 2, 3, 4, 5, 6, 7))
+
+# Second constraint: 8x1 + 7x2 + 5x3 - (y2p - y2m) >= 75
+set.row(lp_mod, 2, c(6, 5, 4, 0, 0, -1, 1), indices = c(1, 2, 3, 4, 5, 6, 7))
+
+# Define the right-hand side of the constraints
+rhs <- c(50, 75)
+set.rhs(lp_mod, rhs)
+
+# Set constraint types
+set.constr.type(lp_mod, c("=", ">="))
+
+# Set non-negativity bounds for the decision variables
+set.bounds(lp_mod, lower = rep(0, 7))
+
+# Assign names to rows and columns for better interpretability
+constraint_labels <- c("Employment Constraint", "Earnings Constraint")
+variable_labels <- c("Product A", "Product B", "Product C", "Increase in Employment", "Decrease in Employment", "Future Earnings Increase", "Future Earnings Decrease")
+dimnames(lp_mod) <- list(constraint_labels, variable_labels)
+
+# Solve the LP model
+solve(lp_mod)
+
+# Get the optimal objective value
+get.objective(lp_mod)
+
+# Get the values of the decision variables at the optimal solution
+get.variables(lp_mod)
+
+#Question_2: Express management’s objective function in terms of x1, x2, x3, y1(+), y1(-), y2(+), y2(-).
+
+#Answer_2: The objective function in terms of  x1, x2, x3, y1(+), y1(-), y2(+), y2(-) is to maximize profit while managing deviations from goals. Thus, the objective function can be expressed as: 
+
+# Maximize = P - (6y1(+) + 6y1(-) - (3y2(+) - 3y2(-)))
+
+#Substituting P: Z = (20x1 + 15x2 + 25x3) - (6y1(+) + 6y1(-) - (3y2(+) - 3y2(-)))
+
+#Question_3: Formulate and solve the linear programming model. What are your findings? 
+
+#Answer_3: Now we can formulate the linear programming (LP) model:
+
+#Constraints:
+#Employment Level: 6x1 + 4x2 + 5x3 + y1(-) - y1(+) = 50
+
+#Earnings Next Year: 8x1 + 7x2+ 5x3 + y2(-) - y2(+) = 75
+
+#Non-negativity Constraints:  x1, x2, x3, y1(+), y1(-), y2(+), y2(-) >= 0
+
+#The output from your LP model shows:
+
+#The optimal solution values for the decision variables are x1 = 0, x2 = 0, x3 = 18.75, y1(+) = 43.75, y1(-) = 0, y2(+) = 0, y2(-) = 0.
+
+#The optimal objective value is 206.25
+
+#Findings: 
+
+#Product Production: The optimal production plan involves only producing Product 3 at a rate of 18.75 units. Products 1 and 2 are not produced at all.
+
+#Employment: There is a surplus of employment by 43.75 employees, indicating that the employment level exceeded the requirement of 50 employees.
+
+#Earnings: The earnings next year meet the required threshold of $75 million with no shortfall.
+
+
+```
